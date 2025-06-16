@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for("static", filename="style.css") }}">
+    <link rel="icon" href="{{ url_for("static", filename="NeoEncomendas.png") }}" type="image/png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <title>Vendas - NeoEstoque</title>
+</head>
+<body class="home-page">
+    <div class="header">
+        <h1>NeoEstoque</h1>
+        <div class="user-info">
+            <span>Bem-vindo, {{ username }}</span>
+            <a href="{{ url_for("logout") }}" class="logout-btn">Sair</a>
+        </div>
+    </div>
+    
+    <div class="home-container">
+        <!-- Mensagens Flash do Flask -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="card">
+            <h2>Vendas Registradas</h2>
+            <form action="{{ url_for("vendas") }}" method="GET" class="search-form">
+                <label for="data_filtro">Filtrar por Data:</label>
+                <input type="date" id="data_filtro" name="data_filtro" value="{{ data_filtro or '' }}">
+                <button type="submit" class="btn">Filtrar</button>
+                <a href="{{ url_for("vendas") }}" class="btn">Limpar Filtro</a>
+            </form>
+            <a href="{{ url_for("dashboard") }}" class="btn">Voltar para o Dashboard</a>
+            
+            {% if vendas %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Marca</th>
+                        <th>Lote</th>
+                        <th>Quantidade Vendida</th>
+                        <th>Data da Venda</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venda in vendas %}
+                    <tr>
+                        <td>{{ venda.name }}</td>
+                        <td>{{ venda.marca }}</td>
+                        <td>{{ venda.lote }}</td>
+                        <td>{{ venda.quantidade }}</td>
+                        <td>{{ venda.data_movimentacao }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>Nenhuma venda encontrada para o período selecionado.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
+

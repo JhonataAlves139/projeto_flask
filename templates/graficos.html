@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='NeoEncomendas.png') }}" type="image/png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Gráficos - NeoEstoque</title>
+</head>
+<body class="home-page">
+    <div class="header">
+        <h1>NeoEstoque</h1>
+        <div class="user-info">
+            <span>Bem-vindo, {{ username }}</span>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Sair</a>
+        </div>
+    </div>
+    
+    <div class="home-container">
+        <!-- Mensagens Flash do Flask -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="card">
+            <h2>Gráficos de Vendas</h2>
+            
+            <!-- Navegação -->
+            <div class="nav-buttons">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Voltar ao Dashboard</a>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="filtros">
+                <label for="filtro-periodo">Filtrar por:</label>
+                <select id="filtro-periodo" class="filtro-select">
+                    <option value="dia">Últimos 30 dias</option>
+                    <option value="mes" selected>Últimos 12 meses</option>
+                    <option value="ano">Últimos 5 anos</option>
+                </select>
+            </div>
+            
+            <!-- Container do gráfico -->
+            <div class="grafico-container">
+                <canvas id="graficoVendas"></canvas>
+            </div>
+            
+            <!-- Seção para registrar vendas -->
+            <div class="card" style="margin-top: 20px;">
+                <h3>Registrar Nova Venda</h3>
+                <form id="form-venda" class="venda-form">
+                    <div class="form-row">
+                        <div class="input-group">
+                            <select id="produto-select">
+                                <option value="">Selecione um produto...</option>
+                                {% for produto in produtos %}
+                                    <option value="{{ produto.id }}">{{ produto.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <input type="number" id="quantidade-venda" name="quantidade" placeholder="Quantidade vendida" min="1" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="date" id="data-venda" name="data_venda" required>
+                        </div>
+                        <button type="submit" class="btn">Registrar Venda</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let grafico = null;
+        
+        // Configurar data atual
+        document.getElementById('data-venda').valueAsDate = new Date();
+        
+        // Carregar produtos no select
+        async function carregarProdutos() {
+            try {
+                const response = await fetch('/api/produtos', {
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro: ${response.status} - ${response.statusText}`);
+                }
+
+                const produtos = await response.json();
+
+                if (!Array.isArray(produtos) || produtos.length === 0) {
+                    throw new Error('Nenhum produto encontrado.');
+                }
+
+                const select = document.getElementById('produto-select');
+                select.innerHTML = '<option value="">Selecione um produto...</option>';
+
+                produtos.forEach(produto => {
+                    const option = document.createElement('option');
+                    option.value = produto.id;
+                    option.textContent = `${produto.name} - ${produto.marca} (Estoque: ${produto.quantidade})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar produtos:', error.message);
+            }
+        }
+
+        
+        // Função para carregar dados do gráfico
+        async function carregarDadosGrafico(filtro = 'mes') {
+            try {
+                const response = await fetch(`/api/dados-graficos?filtro=${filtro}`, {
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erro: ${response.status} - ${response.statusText}`);
+                }
+                
+                const dados = await response.json();
+                
+                if (dados.error) {
+                    throw new Error(dados.error);
+                }
+                
+                atualizarGrafico(dados);
+            } catch (error) {
+                console.error('Erro ao carregar dados do gráfico:', error);
+                alert('Erro ao carregar dados do gráfico: ' + error.message);
+            }
+        }
+        
+        // Função para atualizar o gráfico
+        function atualizarGrafico(dados) {
+            const ctx = document.getElementById('graficoVendas').getContext('2d');
+            
+            if (grafico) {
+                grafico.destroy();
+            }
+
+            grafico = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dados.labels,
+                    datasets: [{
+                        label: 'Produtos Vendidos',
+                        data: dados.valores,
+                        borderColor: '#e600e6',
+                        backgroundColor: 'rgba(230, 0, 230, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#e600e6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#ffffff'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#ffffff'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    
+        // Event listener para mudança de filtro
+    document.getElementById('filtro-periodo').addEventListener('change', function() {
+        carregarDadosGrafico(this.value);
+    });
+
+    // Event listener para o formulário de venda
+    document.getElementById('form-venda').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const produtoId = document.getElementById('produto-select').value;
+        const quantidade = document.getElementById('quantidade-venda').value;
+        const dataVenda = document.getElementById('data-venda').value;
+        
+        if (!produtoId || !quantidade || !dataVenda) {
+            alert('Por favor, preencha todos os campos!');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('produto_id', produtoId);
+        formData.append('quantidade', quantidade);
+        formData.append('data_venda', dataVenda);
+        
+        try {
+            const response = await fetch('/api/registrar-venda', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(result.message);
+                this.reset();
+                document.getElementById('data-venda').valueAsDate = new Date();
+                
+                // Recarregar o gráfico e lista de produtos
+                carregarDadosGrafico(document.getElementById('filtro-periodo').value);
+                carregarProdutos();
+            } else {
+                alert('Erro: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Erro ao registrar venda:', error);
+            alert('Erro ao registrar venda: ' + error.message);
+        }
+    });
+
+    // Carregar dados iniciais
+    carregarDadosGrafico('mes');
+    carregarProdutos();
+
+    </script>
+</body>
+</html>
+

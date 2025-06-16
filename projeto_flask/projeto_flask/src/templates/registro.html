@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='NeoEncomendas.png') }}" type="image/png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <title>Cadastro - NeoEstoque</title>
+</head>
+<body>
+    <div class="left">
+        <img src="{{ url_for('static', filename='NeoEncomendas.png') }}" alt="Logo">
+    </div>
+    <div class="right">
+        <div class="form-container fadeIn">
+            <h1>Cadastro</h1>
+            
+            <!-- Exibir mensagens flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form action="{{ url_for('registrar') }}" method="POST">
+                <div class="input-group">
+                    <input type="text" placeholder="Nome de usuário" name="username" required>
+                </div>
+                <div class="input-group">
+                    <input type="email" placeholder="E-mail" name="email" required>
+                </div>
+                <div class="input-group password-container">
+                    <!-- Campo de Senha Principal -->
+                    <input type="password" placeholder="Senha" id="password" name="password" required>
+                    <i class="bi bi-eye-fill password-toggle" id="btn-password" onclick="mostrarOcultarSenha('password', 'btn-password')"></i>
+                </div>
+                <div class="input-group password-container">
+                    <!-- Campo de Confirmação de Senha -->
+                    <input type="password" placeholder="Confirmar senha" id="confirm-password" name="confirm-password" required>
+                    <i class="bi bi-eye-fill password-toggle" id="btn-confirm-password" onclick="mostrarOcultarSenha('confirm-password', 'btn-confirm-password')"></i>
+                </div>
+                <button type="submit" class="pulse">Cadastrar</button>
+            </form>
+            <a href="{{ url_for('home') }}">
+                <button type="button">Voltar para Login</button>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function mostrarOcultarSenha(inputId, btnId) {
+            const senhaInput = document.getElementById(inputId);
+            const btnSenha = document.getElementById(btnId);
+            
+            if (senhaInput.type === "password") {
+                senhaInput.type = "text";
+                btnSenha.classList.remove("bi-eye-fill");
+                btnSenha.classList.add("bi-eye-slash-fill");
+            } else {
+                senhaInput.type = "password";
+                btnSenha.classList.remove("bi-eye-slash-fill");
+                btnSenha.classList.add("bi-eye-fill");
+            }
+        }
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (password !== confirmPassword) {
+                e.preventDefault(); // Impede o envio do formulário
+                alert('As senhas não coincidem!');
+            }
+        });
+    </script>
+</body>
+</html>

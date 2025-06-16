@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='NeoEncomendas.png') }}" type="image/png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <title>NeoEstoque</title>
+</head>
+<body>
+    <div class="left">
+        <img src="{{ url_for('static', filename='NeoEncomendas.png') }}" alt="Logo">
+    </div>
+    <div class="right">
+        <div class="form-container fadeIn">
+            <h1>Login</h1>
+
+            <!-- Mensagens Flash do Flask -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('login') }}" method="POST">
+                <div class="input-group">
+                    <input type="text" placeholder="Seu usuário" name="login" required>
+                </div>
+                <div class="input-group password-container">
+                    <input type="password" placeholder="Digite sua senha" id="senha" name="senha" required>
+                    <i class="bi bi-eye-fill password-toggle" id="btn-senha" onclick="MostrarSenha()" aria-label="Mostrar senha"></i>
+                </div>
+                <button type="submit" class="pulse">Entrar</button>
+            </form>
+            <a href="{{ url_for('registro') }}">
+                <button type="button">Cadastrar</button>
+            </a>
+        </div>
+    </div>
+
+    <!-- Carregar JS no final do body -->
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
